@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Water Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      text-align: center;
+      padding: 20px;
+      color: #2563eb;
+    }
+    .grid {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 20px;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      width: 200px;
+      text-align: center;
+    }
+    .card h2 {
+      font-size: 18px;
+      color: #374151;
+      margin-bottom: 10px;
+    }
+    .card p {
+      font-size: 28px;
+      font-weight: bold;
+      color: #111827;
+    }
+    #chart-container {
+      background: white;
+      margin: 20px auto;
+      padding: 20px;
+      width: 80%;
+      border-radius: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌊 Smart Water Management Dashboard</h1>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Tank Level</h2>
+      <p id="tankLevel">--%</p>
+    </div>
+    <div class="card">
+      <h2>Flow Rate</h2>
+      <p id="flowRate">-- L/min</p>
+    </div>
+    <div class="card">
+      <h2>Total Usage</h2>
+      <p id="totalUsage">-- L</p>
+    </div>
+  </div>
+
+  <div id="chart-container">
+    <canvas id="usageChart"></canvas>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const tankLevelEl = document.getElementById("tankLevel");
+    const flowRateEl = document.getElementById("flowRate");
+    const totalUsageEl = document.getElementById("totalUsage");
+
+    const ctx = document.getElementById("usageChart").getContext("2d");
+    const usageChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [{
+          label: "Water Usage (Liters)",
+          data: [],
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37,99,235,0.2)",
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: "Time" } },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    async function fetchData() {
+      try {
+        const res = await fetch("http://localhost:5000/api/water");
+        const data = await res.json();
+
+        if (data.length > 0) {
+          const latest = data[data.length - 1];
+
+          tankLevelEl.innerText = latest.tankLevel + "%";
+          flowRateEl.innerText = latest.flowRate + " L/min";
+          totalUsageEl.innerText = latest.totalUsage + " L";
+
+          usageChart.data.labels = data.map(d => new Date(d.timestamp).toLocaleTimeString());
+          usageChart.data.datasets[0].data = data.map(d => d.totalUsage);
+          usageChart.update();
+        }
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+    }
+
+    // Refresh every 5 seconds
+    setInterval(fetchData, 5000);
+    fetchData();
+  </script>
+
+</body>
+</html>
