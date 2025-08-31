@@ -2,12 +2,8 @@ import sqlite3
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
-
-# Initialize Flask
 app = Flask(__name__)
 CORS(app)
-
-# ---------- DATABASE SETUP ----------
 def init_db():
     conn = sqlite3.connect("smartwater.db")
     cursor = conn.cursor()
@@ -23,18 +19,12 @@ def init_db():
     conn.commit()
     conn.close()
 
-init_db()  # Create table if not exists
-
-
-# ---------- ROUTES ----------
-
-# ✅ Insert new water data (POST)
+init_db()  
 @app.route("/api/water", methods=["POST"])
 def add_water_data():
     try:
         data = request.get_json()
 
-        # Validate required fields
         if not all(k in data for k in ("tankLevel", "flowRate", "totalUsage")):
             return jsonify({"error": "Missing required fields"}), 400
 
@@ -57,8 +47,6 @@ def add_water_data():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# ✅ Get last 10 records (GET)
 @app.route("/api/water", methods=["GET"])
 def get_water_data():
     try:
@@ -73,14 +61,11 @@ def get_water_data():
             for row in rows
         ]
 
-        # Reverse to oldest → newest
         return jsonify(result[::-1])
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# ---------- RUN SERVER ----------
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
 
